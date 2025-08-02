@@ -1,4 +1,4 @@
-# Echomate Backend Architecture & Construction Plan (Simplified)
+# Echomate Backend Architecture & Construction Plan (Simplified & Complete)
 
 This document outlines a simple, cost-effective, and direct architecture that maps precisely to the core user scenario.
 
@@ -9,6 +9,18 @@ This document outlines a simple, cost-effective, and direct architecture that ma
 4.  Another user **Likes** that post. The post's `likesCount` goes up, and the original poster's `likesReceivedCount` goes up.
 5.  The second user can **Unlike** the post, and the counts reverse.
 6.  The original user can **Delete** their post, and their `postsCount` goes down.
+
+## 🏛️ System Architecture Overview
+*This diagram shows how all the AWS services connect.*
+```mermaid
+graph TD
+    A[Frontend on AWS Amplify] --> B[API Gateway]
+    B --> C{Monolithic Lambda}
+    C --> D[DynamoDB Tables]
+    C --> E[S3 Bucket]
+    F[Cognito for Auth] --> B
+    G[CloudFront via Amplify] --> A
+```
 
 ## 📦 Database Architecture (DynamoDB - Simple & Direct)
 *All tables will use **On-Demand capacity** for minimum cost.*
@@ -52,9 +64,6 @@ This document outlines a simple, cost-effective, and direct architecture that ma
   "userId": "string (Sort Key)"
 }
 ```
-> **Note:** This composite key (`postId` + `userId`) provides a simple and extremely efficient way to check if a user has already liked a post and to add/remove a like.
-
----
 
 ## 📸 Media Storage Architecture (S3 - Simple & Organized)
 
@@ -69,32 +78,33 @@ echomate-media/
   ├── post-images/
   │   └── {postId}.jpg      // An image for a post is named after the postId.
 ```
-> **Note:** This structure makes it incredibly easy to locate any media asset just by knowing the user's ID or the post's ID.
+
+## 🔄 API Endpoints & Data Flow
+*All endpoints are handled by a single "monolithic" Lambda function for simplicity.*
+
+#### User & Profile Endpoints
+- `GET /profile/{userId}`
+  - **Action:** Fetches a user's profile data from the `Users` table.
+- `PUT /profile`
+  - **Action:** Updates the profile info (fullName, description, etc.) for the authenticated user in the `Users` table. Requires authentication.
+
+#### Post Endpoints
+- `POST /posts`
+  - **Action:** Creates a new post. The Lambda generates a `postId`, adds a record to the `Posts` table, and increments the `postsCount` in the `Users` table. Requires authentication.
+- `GET /posts/{postId}`
+  - **Action:** Fetches a single post from the `Posts` table.
+- `DELETE /posts/{postId}`
+  - **Action:** Deletes a post. The Lambda decrements `postsCount` in the `Users` table, deletes the record from `Posts`, and deletes the image from S3. Requires authentication and ownership check.
+
+#### Like Endpoints
+- `POST /posts/{postId}/like`
+  - **Action:** Adds a like. The Lambda adds a record to the `Likes` table, and increments `likesCount` on the `Posts` table and `likesReceivedCount` on the author's `Users` table record. Requires authentication.
+- `DELETE /posts/{postId}/like`
+  - **Action:** Removes a like. The Lambda does the reverse of the above. Requires authentication.
 
 ---
 
-## 🔄 Data Flow for Key Actions
-
-#### Liking a Post (Simplified Flow)
-1.  **Frontend:** User clicks "Like" on a post (`postId`).
-2.  **API Call:** Request is sent to the `/posts/{postId}/like` endpoint.
-3.  **Lambda Function:**
-    *   **Step 1: Create a `Like` record.** Adds a new item to the `Likes` table with the `postId` and the `userId` of the person who clicked like. (If this fails because the record already exists, it means the user already liked it, so we can stop).
-    *   **Step 2: Increment `Posts` table.** Atomically increases the `likesCount` for the `postId`.
-    *   **Step 3: Increment `Users` table.** Atomically increases the `likesReceivedCount` for the post's original author.
-4.  **Response:** Lambda returns success.
-
-#### Deleting a Post (Simplified Flow)
-1.  **Frontend:** User clicks "Delete" on their own post (`postId`).
-2.  **API Call:** Request is sent to the `/posts/{postId}` endpoint with a `DELETE` method.
-3.  **Lambda Function:**
-    *   **Step 1: Decrement `Users` table.** Atomically decreases the `postsCount` for the user.
-    *   **Step 2: Delete media from S3.** Deletes the image from the `post-images/` folder.
-    *   **Step 3: Delete the post.** Deletes the item from the `Posts` table.
-    *   *(Note: We can also run a background job to clean up any likes associated with the deleted post later, to keep the user's experience fast).*
-4.  **Response:** Lambda returns success.
-
----
-
-## 🚀 Deployment & Security
-*The rest of the architecture (API Gateway, Monolithic Lambda, Cognito, AWS Amplify Hosting) remains the same as it is already optimized for simplicity and low cost.*
+## 🔒 Security
+- **Authentication:** Handled by AWS Cognito. The API Gateway will use a free, built-in Cognito Authorizer to protect routes that require a user to be logged in.
+- **Authorization:** Inside the Lambda function, for actions like deleting a post, the code will check that the `userId` from the Cognito token matches the `userId` on the post.
+- **Storage:** The S3 bucket will be configured to **Block all public access**. All access will be granted through secure, temporary pre-signed URLs generated by the Lambda function.
