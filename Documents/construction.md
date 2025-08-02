@@ -152,6 +152,45 @@ echomate-media/
   │           └── media-1.jpg
 ```
 
+## 🚀 Deployment Architecture
+
+### Development Environment
+```mermaid
+graph TD
+    A[Frontend localhost:8080] --> B[API Gateway]
+    B --> C[Lambda Functions]
+    C --> D[DynamoDB]
+    C --> E[S3 Buckets]
+    F[Cognito] --> B
+```
+
+### Production Environment
+```mermaid
+graph TD
+    A[Frontend https://domain.com] --> B[API Gateway]
+    B --> C[Lambda Functions]
+    C --> D[DynamoDB]
+    C --> E[S3 Buckets]
+    F[Cognito] --> B
+    G[CloudFront] --> A
+```
+
+### Environment Configuration
+```json
+{
+    "development": {
+        "apiUrl": "https://api-dev.aws-region.amazonaws.com",
+        "cognitoPoolId": "region_poolid",
+        "allowedOrigins": ["http://localhost:8080"]
+    },
+    "production": {
+        "apiUrl": "https://api.your-domain.com",
+        "cognitoPoolId": "region_poolid",
+        "allowedOrigins": ["https://your-domain.com"]
+    }
+}
+```
+
 ## 🔄 Data Flow Diagrams
 
 ### Profile Update Flow
