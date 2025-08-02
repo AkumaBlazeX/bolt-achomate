@@ -116,9 +116,10 @@ graph TD
 ### Production Environment
 ```mermaid
 graph TD
-    A[Frontend https://domain.com] --> B[API Gateway]
+    A[Frontend on AWS Amplify] --> B[API Gateway]
     B --> C{Monolithic Lambda}
     C --> D[DynamoDB]
     C --> E[S3 Buckets]
     F[Cognito] --> B
+    G[CloudFront via Amplify] --> A
 ```
