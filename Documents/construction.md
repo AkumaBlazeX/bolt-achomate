@@ -9,148 +9,97 @@ graph TD
     B --> C[JWT Token]
     C --> D[API Gateway Authorizer]
     D --> E[Protected Resources]
+    B -- Post-Confirmation Trigger --> F[Lambda: CreateUserProfile]
+    F --> G[DynamoDB: Users Table]
 ```
 
 #### Components:
-- **User Pool**: Manages user accounts and authentication
-- **Identity Pool**: Handles AWS service access
-- **JWT Tokens**: For secure API access
-- **Authorizers**: API Gateway custom authorizers
+- **User Pool**: Manages user accounts and authentication.
+- **JWT Tokens**: For secure API access.
+- **Cognito Authorizer**: The free, built-in authorizer for API Gateway.
+- **Post-Confirmation Trigger**: A Lambda function that runs automatically after a user signs up to create their profile in DynamoDB. This simplifies the frontend logic.
 
-### 2. Database Architecture (DynamoDB)
+### 2. Database Architecture (DynamoDB - On-Demand)
 
 #### User Table
+*Set to On-Demand capacity for cost-effectiveness.*
 ```json
 {
   "userId": "string (primary key)",
   "email": "string",
   "username": "string",
   "profile": {
-    "basic": {
-      "fullName": "string",
-      "position": "string",
-      "location": "string",
-      "joinDate": "string"
-    },
-    "bio": {
-      "description": "string",
-      "oneLiner": "string",
-      "interests": ["string"]
-    },
+    "basic": { "fullName": "string", "position": "string", "location": "string", "joinDate": "string" },
+    "bio": { "description": "string", "oneLiner": "string", "interests": ["string"] },
     "images": {
-      "profile": {
-        "url": "string",
-        "lastUpdated": "timestamp"
-      },
-      "cover": {
-        "url": "string",
-        "lastUpdated": "timestamp"
-      },
-      "background": {
-        "type": "string (url/gradient)",
-        "value": "string",
-        "lastUpdated": "timestamp"
-      }
-    },
-    "preferences": {
-      "theme": "string",
-      "notifications": {
-        "email": "boolean",
-        "push": "boolean"
-      },
-      "privacy": {
-        "profileVisibility": "string (public/private)",
-        "postVisibility": "string (public/private)"
-      }
+      "profile": { "url": "string", "lastUpdated": "timestamp" },
+      "cover": { "url": "string", "lastUpdated": "timestamp" },
+      "background": { "type": "string (url/gradient)", "value": "string", "lastUpdated": "timestamp" }
     }
   },
   "stats": {
-    "posts": {
-      "total": "number",
-      "public": "number",
-      "private": "number"
-    },
-    "likes": {
-      "given": "number",
-      "received": "number"
-    }
+    "posts": { "total": "number" },
+    "likes": { "received": "number" }
   },
   "metadata": {
     "createdAt": "timestamp",
     "updatedAt": "timestamp",
-    "lastLogin": "timestamp",
-    "status": "string (active/inactive/suspended)"
+    "status": "string (active/inactive)"
   }
 }
 ```
 
 #### Posts Table
+*Set to On-Demand capacity for cost-effectiveness.*
 ```json
 {
   "postId": "string (primary key)",
   "userId": "string (GSI)",
   "content": "string",
   "mediaUrls": "string[]",
-  "stats": {
-    "likes": "number",
-    "comments": "number"
-  },
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
-}
-```
-
-#### Interactions Table
-```json
-{
-  "interactionId": "string (primary key)",
-  "userId": "string (GSI)",
-  "postId": "string (GSI)",
-  "type": "string (like/comment)",
-  "content": "string (for comments)",
+  "stats": { "likes": "number", "comments": "number" },
   "createdAt": "timestamp"
 }
 ```
 
+#### Interactions (Likes) Table
+*Set to On-Demand capacity for cost-effectiveness.*
+```json
+{
+  "postId": "string (Partition Key)",
+  "userId": "string (Sort Key)",
+  "type": "string (e.g., 'like')",
+  "createdAt": "timestamp"
+}
+```
+> **Note:** Using a composite key (`postId` + `userId`) makes checking if a user has already liked a post extremely fast and cheap (`GetItem` operation).
+
 ### 3. API Architecture (Lambda & API Gateway)
+*   **Strategy:** For MVP simplicity, a **single "monolithic" Lambda function** will be created. It will contain an internal router to handle all API endpoints. This simplifies deployment and dependency management.
+> *Note: For scaling beyond MVP, consider splitting this Lambda into micro-Lambdas.*
 
 #### API Endpoints
 ```plaintext
-/auth
-  POST /signup
-  POST /login
-  POST /refresh-token
-  POST /forgot-password
-
-/users
-  GET /{userId}
-  PUT /{userId}/profile
-  GET /{userId}/posts
-  GET /{userId}/likes
-
-/posts
-  POST /
-  GET /{postId}
-  DELETE /{postId}
-  PUT /{postId}
-  POST /{postId}/like
-  DELETE /{postId}/like
+/users/{userId}/profile  (GET, PUT)
+/posts                   (POST)
+/posts/{postId}          (GET, PUT, DELETE)
+/posts/{postId}/like     (POST, DELETE)
+/users/{userId}/posts    (GET)
 ```
 
 ### 4. Media Storage Architecture (S3)
 
-#### Bucket Structure
+#### Bucket Structure & Cleanup
 ```plaintext
 echomate-media/
+  ├── temp/             -- Files land here first. Auto-deleted after 24hrs.
   ├── profiles/
   │   └── {userId}/
-  │       ├── profile-pic.jpg
-  │       └── cover-pic.jpg
   ├── posts/
-  │   └── {userId}/
-  │       └── {postId}/
-  │           └── media-1.jpg
+  │   └── {postId}/
 ```
+- **Cleanup Strategy**: An **S3 Lifecycle Policy** will automatically delete any file in the `temp/` folder older than 24 hours. This is a free, automated way to clean up orphaned uploads.
+> *Optional: For future performance, add CloudFront in front of S3 for caching.*
 
 ## 🚀 Deployment Architecture
 
@@ -158,7 +107,7 @@ echomate-media/
 ```mermaid
 graph TD
     A[Frontend localhost:8080] --> B[API Gateway]
-    B --> C[Lambda Functions]
+    B --> C{Monolithic Lambda}
     C --> D[DynamoDB]
     C --> E[S3 Buckets]
     F[Cognito] --> B
@@ -168,149 +117,8 @@ graph TD
 ```mermaid
 graph TD
     A[Frontend https://domain.com] --> B[API Gateway]
-    B --> C[Lambda Functions]
+    B --> C{Monolithic Lambda}
     C --> D[DynamoDB]
     C --> E[S3 Buckets]
     F[Cognito] --> B
-    G[CloudFront] --> A
 ```
-
-### Environment Configuration
-```json
-{
-    "development": {
-        "apiUrl": "https://api-dev.aws-region.amazonaws.com",
-        "cognitoPoolId": "region_poolid",
-        "allowedOrigins": ["http://localhost:8080"]
-    },
-    "production": {
-        "apiUrl": "https://api.your-domain.com",
-        "cognitoPoolId": "region_poolid",
-        "allowedOrigins": ["https://your-domain.com"]
-    }
-}
-```
-
-## 🔄 Data Flow Diagrams
-
-### Profile Update Flow
-```mermaid
-sequenceDiagram
-    Frontend->>API Gateway: Update Profile Request
-    API Gateway->>Lambda: Validate & Process
-    Lambda->>S3: Upload Media
-    S3-->>Lambda: Media URLs
-    Lambda->>DynamoDB: Update Profile
-    DynamoDB-->>Lambda: Success
-    Lambda-->>Frontend: Updated Profile
-```
-
-### Post Creation Flow
-```mermaid
-sequenceDiagram
-    Frontend->>S3: Get Presigned URL
-    S3-->>Frontend: Upload URL
-    Frontend->>S3: Upload Media
-    Frontend->>API Gateway: Create Post
-    API Gateway->>Lambda: Process Post
-    Lambda->>DynamoDB: Save Post
-    DynamoDB-->>Frontend: Post Created
-```
-
-## 🔒 Security Architecture
-
-### Network Security
-```plaintext
-VPC/
-  ├── Public Subnet
-  │   └── API Gateway
-  ├── Private Subnet
-  │   ├── Lambda Functions
-  │   └── DynamoDB Endpoint
-  └── Security Groups
-      ├── API Gateway SG
-      └── Lambda SG
-```
-
-### Data Security
-- **At Rest**: AWS KMS encryption
-- **In Transit**: HTTPS/TLS
-- **Access Control**: IAM + RBAC
-- **API Security**: WAF + Rate Limiting
-
-## 💾 Database Access Patterns
-
-### Key Access Patterns
-1. **Get User Profile**
-   - Primary Key: userId
-   - Response: Full profile data
-
-2. **Get User Posts**
-   - GSI: userId-createdAt
-   - Response: Paginated posts
-
-3. **Get Post with Interactions**
-   - Primary Key: postId
-   - GSI: postId-createdAt for comments
-   - Response: Post + interaction counts
-
-4. **Get User Interactions**
-   - GSI: userId-type
-   - Response: Liked/commented posts
-
-## 🚀 Scaling Considerations
-
-### DynamoDB Capacity
-- **Users Table**: On-demand scaling
-- **Posts Table**: Provisioned throughput
-- **Interactions Table**: On-demand scaling
-
-### Lambda Configuration
-- Memory: 256MB - 512MB
-- Timeout: 10-30 seconds
-- Concurrency: 100-500
-
-### S3 Performance
-- CloudFront CDN
-- Presigned URLs
-- Lifecycle policies
-
-## 📈 Monitoring & Maintenance
-
-### CloudWatch Metrics
-- API Gateway: Latency, 4xx/5xx errors
-- Lambda: Duration, errors, throttles
-- DynamoDB: Consumed capacity, throttles
-
-### Alerts
-- Error rate thresholds
-- Latency thresholds
-- Cost thresholds
-
-## 🔄 Deployment Strategy
-
-### CI/CD Pipeline
-```mermaid
-graph LR
-    A[GitHub] --> B[CodeBuild]
-    B --> C[CodeDeploy]
-    C --> D[Staging]
-    D --> E[Production]
-```
-
-### Environment Configuration
-- Development
-- Staging
-- Production
-
-## 📊 Performance Optimization
-
-### Caching Strategy
-- CloudFront for media
-- DAX for DynamoDB
-- API response caching
-
-### Query Optimization
-- Selective attributes
-- Parallel queries
-- Batch operations
