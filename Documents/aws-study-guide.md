@@ -9,7 +9,7 @@
 ## 🌐 Development Workflow
 - **Local:** Run frontend on `http://localhost:8080`.
 - **AWS CORS:** Configure Cognito, API Gateway, and S3 to allow requests from `http://localhost:8080`.
-- **Deployment:** Use a free-tier service like Vercel or Netlify for the frontend when ready to go live.
+- **Deployment:** Use **AWS Amplify Hosting** for the frontend when ready to go live.
 
 ## 📱 Phase 1: User Authentication (AWS Cognito)
 
@@ -104,13 +104,14 @@
     *   Threshold: Set a low value, like `$5 USD`.
     *   Action: Configure an SNS topic to send you an email notification when the threshold is breached.
 
-## 🚀 Phase 7: Deployment
+## 🚀 Phase 7: Deployment (AWS-Only)
 
-### Step 1: Frontend Deployment
-1.  **Choose a Host:** Sign up for a free account with **Vercel** or **Netlify**.
-2.  **Connect GitHub:** Link your GitHub account and select your `echomate-lite` repository.
-3.  **Configure:** The platform will auto-detect it's a React/Vite project. Add your environment variables (`REACT_APP_API_URL`, etc.) in the project settings.
-4.  **Deploy:** The first deployment will happen automatically, and every future `git push` will trigger a new deployment.
+### Step 1: Frontend Deployment with AWS Amplify
+1.  **Open AWS Amplify -> Host a web app.**
+2.  **Connect GitHub:** Authorize Amplify to access your GitHub account and select the `echomate-lite` repository and `master` branch.
+3.  **Build Settings:** Amplify will auto-detect your Vite project. It will create a `amplify.yml` file for you. Confirm the settings.
+4.  **Environment Variables:** In the Amplify console, go to "Environment variables" and add your keys like `REACT_APP_API_URL`, etc.
+5.  **Deploy:** Save and deploy. Amplify will now automatically build and deploy your app, providing you with a free `amplifyapp.com` URL and HTTPS.
 
 ### Step 2: Backend Deployment
 1.  **Manual for MVP:** For simplicity, you can update your Lambda function manually at first.
@@ -130,5 +131,5 @@
     *   This gives you a single place to see the health of your backend.
 
 ### Step 2: Pre-launch Testing
-1.  **Manual Testing:** Use your deployed frontend (from Vercel/Netlify) and test every feature thoroughly.
+1.  **Manual Testing:** Use your deployed frontend URL from AWS Amplify and test every feature thoroughly.
 2.  **Invite Friends:** Ask 2-3 friends to sign up and use the app at the same time to simulate light concurrent traffic. Check your CloudWatch dashboard for any errors during their testing.
