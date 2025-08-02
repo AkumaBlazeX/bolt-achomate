@@ -1,220 +1,89 @@
-# AWS Implementation Guide for Non-Developers
-(Simple Step-by-Step Guide for Echomate)
+# AWS Implementation Guide for Non-Developers (Simple & Refined)
 
 ## 🚀 Getting Started with AWS
 
 ### First Steps (One-time Setup)
-1. Create AWS Account
-   - Go to aws.amazon.com
-   - Click "Create an AWS Account"
-   - Follow sign-up steps
-   - Add payment method
-
-2. Security Setup
-   - Enable MFA on root account
-   - Create IAM user for yourself
-   - Save access keys safely
+1. **Create AWS Account** and set up billing alerts.
+2. **Security Setup:** Enable MFA and create an IAM user for yourself.
 
 ## 🌐 Development Workflow
-
-### Development Stage (Current)
-1. **Frontend Setup**
-   - Run on `http://localhost:8080`
-   - No HTTPS needed
-   - Use environment variables for AWS endpoints
-
-2. **AWS Configuration for Development**
-   ```json
-   // CORS Configuration for all services
-   {
-       "AllowedOrigins": ["http://localhost:8080"],
-       "AllowedHeaders": ["*"],
-       "AllowedMethods": ["GET", "POST", "PUT", "DELETE"]
-   }
-   ```
-
-3. **Environment Variables**
-   ```plaintext
-   REACT_APP_API_URL=your-api-gateway-url
-   REACT_APP_USER_POOL_ID=your-cognito-pool-id
-   REACT_APP_CLIENT_ID=your-cognito-client-id
-   ```
-
-### Future Deployment Options
-1. **Vercel Deployment**
-   - Automatic HTTPS
-   - GitHub integration
-   - Free tier available
-
-2. **Netlify Deployment**
-   - Automatic HTTPS
-   - GitHub integration
-   - Free tier available
-
-3. **AWS Amplify**
-   - Direct AWS integration
-   - Automatic HTTPS
-   - AWS ecosystem
+- **Local:** Run frontend on `http://localhost:8080`.
+- **AWS CORS:** Configure Cognito, API Gateway, and S3 to allow requests from `http://localhost:8080`.
+- **Deployment:** Use a free-tier service like Vercel or Netlify for the frontend when ready to go live.
 
 ## 📱 Phase 1: User Authentication (AWS Cognito)
 
 ### Step 1: Create User Pool
-1. Open AWS Console
-2. Search for "Cognito"
-3. Click "Create User Pool"
-4. Basic Settings:
-   - Allow email sign-in
-   - Allow username sign-in
-   - Required attributes: name, email
-   - Password minimum length: 8
+1.  **Open AWS Cognito -> User Pools -> Create user pool.**
+2.  **Settings:**
+    *   Provider types: Cognito user pool
+    *   Cognito user pool sign-in options: **Email**
+    *   Password policy: Use default settings for simplicity.
+    *   Multi-factor authentication: **No MFA** (for MVP).
+    *   User account recovery: **Enable self-service account recovery**.
+    *   App integration: Name your app client (e.g., `echomate-app-client`), and for "App type," select **Public client**.
 
-### Step 2: Configure App Integration
-1. Create app client
-   - Name it "EchomateApp"
-   - Generate client secret: No
-2. Set callback URLs:
-   - http://localhost:8080 (for development)
-   - Your domain (for production)
-
-### Step 3: Save Important Information
-- User Pool ID
-- App Client ID
-- Region
+### Step 2: Create Post-Confirmation Lambda Trigger
+1.  **Open AWS Lambda -> Create function.**
+2.  **Function:** Create a simple Node.js function.
+3.  **Code:** This function will receive user data from Cognito and create an entry in your DynamoDB `Users` table.
+4.  **Connect Trigger:** In Cognito, under the "User pool properties" tab, find "Triggers" and assign your Lambda to the **Post confirmation** trigger.
 
 ## 💾 Phase 2: Database Setup (DynamoDB)
 
 ### Step 1: Create User Table
-1. Open DynamoDB console
-2. Click "Create table"
-3. Settings:
-   - Table name: Users
-   - Primary key: `userId` (Type: String)
-   - Use default settings. The nested `profile` object will be stored as a map.
-   - You don't need to define all the nested attributes in the table creation UI. DynamoDB is schema-less, and you'll add the nested JSON when you write data to the table from your Lambda functions.
+1.  **Open DynamoDB -> Tables -> Create table.**
+2.  **Settings:**
+    *   Table name: `Users`
+    *   Partition key: `userId` (Type: String)
+    *   Table settings: Choose **On-demand** capacity mode for cost-effectiveness.
 
 ### Step 2: Create Posts Table
-1. Create another table
-   - Table name: Posts
-   - Primary key: postId
-   - Add GSI for userId
+1.  **Create table:**
+    *   Table name: `Posts`
+    *   Partition key: `postId` (Type: String)
+    *   Table settings: **On-demand** capacity mode.
 
-### Step 3: Create Likes Table
-1. Create table
-   - Table name: Likes
-   - Primary key: likeId
-   - Add GSIs for userId and postId
+### Step 3: Create Interactions (Likes) Table
+1.  **Create table:**
+    *   Table name: `Interactions`
+    *   Partition key: `postId` (Type: String)
+    *   **Enable "Sort key"** and enter `userId` (Type: String). This creates the composite key.
+    *   Table settings: **On-demand** capacity mode.
 
-## 🖼️ Phase 3: Image Storage (S3)
+## 🔄 Phase 3: API Setup (Lambda & API Gateway)
 
-### Step 1: Create Buckets
-1. Open S3 console
-2. Create bucket for profiles
-   - Name: echomate-profiles
-   - Region: choose nearest
-   - Block public access: Yes
-
-3. Create bucket for posts
-   - Name: echomate-posts
-   - Same settings as above
-
-### Step 2: Configure CORS
-1. Go to bucket permissions
-2. Add CORS rule:
-```json
-{
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["PUT", "POST", "GET"],
-    "AllowedOrigins": ["http://localhost:8080"],
-    "ExposeHeaders": []
-}
-```
-
-## 🔌 Phase 4: API Setup (API Gateway & Lambda)
-
-### Step 1: Create Lambda Functions
-1. Create User Functions
-   - createUser
-   - updateProfile
-   - getProfile
-
-2. Create Post Functions
-   - createPost
-   - deletePost
-   - likePost
+### Step 1: Create the Monolithic Lambda Function
+1.  **Open AWS Lambda -> Create function.**
+2.  **Settings:**
+    *   Function name: `echomate-api-handler`
+    *   Runtime: Node.js
+    *   Permissions: Create a new role with basic Lambda permissions. We will add DynamoDB/S3 permissions later.
+3.  **Code:** Inside this single function, you'll write an entry handler that uses a `switch` statement on `event.httpMethod` and `event.path` to route the request to the correct logic (e.g., `createUser`, `getPost`).
 
 ### Step 2: Set Up API Gateway
-1. Create new API
-   - Name: EchomateAPI
-   - Type: REST API
-2. Create resources:
-   - /users
-   - /posts
-   - /likes
+1.  **Open API Gateway -> REST API -> Build.**
+2.  **Settings:** New API, name it `echomate-api`.
+3.  **Create Resources:** Create resources like `/posts` and `/users`.
+4.  **Create Proxy Integration:** For your resources, create a method (e.g., `POST` on `/posts`). For the integration type, choose **Lambda Function** and set the "Lambda proxy integration" checkbox. Point it to your single `echomate-api-handler` function.
+5.  **Authorizer:** Under "Authorizers," create a **Cognito authorizer** and link it to your User Pool. Then, apply this authorizer to your protected API methods.
 
-## 🔒 Basic Security Setup
+## 📸 Phase 4: Image Storage (S3)
 
-### Step 1: HTTPS Setup
-1. Request Certificate (ACM)
-   - Add your domain
-   - Validate via DNS
+### Step 1: Create S3 Bucket
+1.  **Open S3 -> Buckets -> Create bucket.**
+2.  **Settings:**
+    *   Bucket name: `echomate-media-YOUR-UNIQUE-ID`
+    *   **Block all public access** (keep this checked for security).
 
-### Step 2: Basic Protection
-1. Enable AWS WAF
-   - Block common attacks
-   - Rate limiting: 1000 requests per IP
+### Step 2: Configure Lifecycle Rule for Cleanup
+1.  Inside your bucket, go to the **Management** tab.
+2.  **Create lifecycle rule:**
+    *   Rule name: `TempFileCleanup`
+    *   Scope: Apply this rule to a prefix, and specify `temp/`.
+    *   Action: **Expire current versions of objects.**
+    *   Days after object creation: `1`. This will delete files in `temp/` after 24 hours.
 
-## 📝 Important Notes
-
-### Costs to Watch
-- S3 storage costs
-- DynamoDB usage
-- Lambda invocations
-- API Gateway calls
-
-### Backup Considerations
-1. Enable DynamoDB backups
-2. Enable S3 versioning
-3. Save configuration details
-
-## 🛠️ Testing Steps
-
-### Local Testing
-1. Test user signup
-2. Test image upload
-3. Test post creation
-4. Test likes
-
-### Production Testing
-1. Repeat all local tests
-2. Test with real users
-3. Monitor for errors
-
-## 🚨 Common Issues & Solutions
-
-### Authentication Issues
-- Check Cognito settings
-- Verify app client ID
-- Check callback URLs
-
-### Image Upload Issues
-- Check S3 permissions
-- Verify CORS settings
-- Check file size limits
-
-### API Issues
-- Check Lambda logs
-- Verify API Gateway settings
-- Check error messages
-
-## 📞 Support Resources
-
-### AWS Support
-- AWS Documentation
-- AWS Support Forums
-- AWS Support Plan (if needed)
-
-### Monitoring
-1. Set up basic CloudWatch alarms
-   - Error rates
-   - API latency
-   - Cost alerts
+### Step 3: Configure CORS
+1.  In your bucket, go to the **Permissions** tab.
+2.  Find the CORS configuration and add a rule to allow `PUT` requests from `http://localhost:8080`.
