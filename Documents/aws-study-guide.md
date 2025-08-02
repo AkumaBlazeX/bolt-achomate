@@ -15,6 +15,47 @@
    - Create IAM user for yourself
    - Save access keys safely
 
+## 🌐 Development Workflow
+
+### Development Stage (Current)
+1. **Frontend Setup**
+   - Run on `http://localhost:8080`
+   - No HTTPS needed
+   - Use environment variables for AWS endpoints
+
+2. **AWS Configuration for Development**
+   ```json
+   // CORS Configuration for all services
+   {
+       "AllowedOrigins": ["http://localhost:8080"],
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "POST", "PUT", "DELETE"]
+   }
+   ```
+
+3. **Environment Variables**
+   ```plaintext
+   REACT_APP_API_URL=your-api-gateway-url
+   REACT_APP_USER_POOL_ID=your-cognito-pool-id
+   REACT_APP_CLIENT_ID=your-cognito-client-id
+   ```
+
+### Future Deployment Options
+1. **Vercel Deployment**
+   - Automatic HTTPS
+   - GitHub integration
+   - Free tier available
+
+2. **Netlify Deployment**
+   - Automatic HTTPS
+   - GitHub integration
+   - Free tier available
+
+3. **AWS Amplify**
+   - Direct AWS integration
+   - Automatic HTTPS
+   - AWS ecosystem
+
 ## 📱 Phase 1: User Authentication (AWS Cognito)
 
 ### Step 1: Create User Pool
