@@ -87,3 +87,48 @@
 ### Step 3: Configure CORS
 1.  In your bucket, go to the **Permissions** tab.
 2.  Find the CORS configuration and add a rule to allow `PUT` requests from `http://localhost:8080`.
+
+## 🔒 Phase 5: Security & Cost Control
+
+### Step 1: API Rate Limiting
+1.  **Open API Gateway -> Usage Plans.**
+2.  **Create Usage Plan:**
+    *   Name: `MVP-Throttling`
+    *   Throttling: Enable and set a rate (e.g., 10 requests/second) and burst (e.g., 20 requests). This is a generous free starting point.
+3.  **Associate:** Associate this plan with your API stage.
+
+### Step 2: Set Up a Billing Alarm (Crucial for Cost Control)
+1.  **Open CloudWatch -> Billing -> Create alarm.**
+2.  **Settings:**
+    *   Metric: `EstimatedCharges`
+    *   Threshold: Set a low value, like `$5 USD`.
+    *   Action: Configure an SNS topic to send you an email notification when the threshold is breached.
+
+## 🚀 Phase 7: Deployment
+
+### Step 1: Frontend Deployment
+1.  **Choose a Host:** Sign up for a free account with **Vercel** or **Netlify**.
+2.  **Connect GitHub:** Link your GitHub account and select your `echomate-lite` repository.
+3.  **Configure:** The platform will auto-detect it's a React/Vite project. Add your environment variables (`REACT_APP_API_URL`, etc.) in the project settings.
+4.  **Deploy:** The first deployment will happen automatically, and every future `git push` will trigger a new deployment.
+
+### Step 2: Backend Deployment
+1.  **Manual for MVP:** For simplicity, you can update your Lambda function manually at first.
+2.  **Process:**
+    *   Zip your Lambda function's code.
+    *   In the AWS Lambda console, select your function.
+    *   Under "Code source," click "Upload from" and select your `.zip` file.
+3.  **Future Automation:** Later, you can automate this with a simple GitHub Actions script that performs the zip and upload for you.
+
+## 📈 Phase 8: Monitoring & Launch
+
+### Step 1: Create a CloudWatch Dashboard
+1.  **Open CloudWatch -> Dashboards -> Create dashboard.**
+2.  **Add Widgets:**
+    *   **Lambda:** Create widgets for "Invocations," "Errors," and "Duration" for your monolithic function.
+    *   **API Gateway:** Create widgets for "Latency" and "5XX Errors."
+    *   This gives you a single place to see the health of your backend.
+
+### Step 2: Pre-launch Testing
+1.  **Manual Testing:** Use your deployed frontend (from Vercel/Netlify) and test every feature thoroughly.
+2.  **Invite Friends:** Ask 2-3 friends to sign up and use the app at the same time to simulate light concurrent traffic. Check your CloudWatch dashboard for any errors during their testing.
