@@ -58,7 +58,7 @@
 
 ## 🚀 Phase 7: Deployment
 - [ ] **7.1 Frontend Deployment**
-  - [ ] Choose a host with a generous free tier (Vercel or Netlify recommended)
+  - [ ] **(AWS-Only) Use AWS Amplify Hosting for the frontend**, leveraging its free tier and seamless integration.
   - [ ] Set up CI/CD through their GitHub integration
 
 - [ ] **7.2 Backend Deployment**
