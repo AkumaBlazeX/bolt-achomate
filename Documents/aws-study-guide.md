@@ -47,9 +47,9 @@
 2. Click "Create table"
 3. Settings:
    - Table name: Users
-   - Primary key: userId
-   - Add sort key: No
-   - Use default settings
+   - Primary key: `userId` (Type: String)
+   - Use default settings. The nested `profile` object will be stored as a map.
+   - You don't need to define all the nested attributes in the table creation UI. DynamoDB is schema-less, and you'll add the nested JSON when you write data to the table from your Lambda functions.
 
 ### Step 2: Create Posts Table
 1. Create another table
