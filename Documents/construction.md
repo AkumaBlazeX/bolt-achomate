@@ -25,19 +25,62 @@ graph TD
   "userId": "string (primary key)",
   "email": "string",
   "username": "string",
-  "profileData": {
-    "fullName": "string",
-    "bio": "string",
-    "location": "string",
-    "profilePicUrl": "string",
-    "coverPicUrl": "string"
+  "profile": {
+    "basic": {
+      "fullName": "string",
+      "position": "string",
+      "location": "string",
+      "joinDate": "string"
+    },
+    "bio": {
+      "description": "string",
+      "oneLiner": "string",
+      "interests": ["string"]
+    },
+    "images": {
+      "profile": {
+        "url": "string",
+        "lastUpdated": "timestamp"
+      },
+      "cover": {
+        "url": "string",
+        "lastUpdated": "timestamp"
+      },
+      "background": {
+        "type": "string (url/gradient)",
+        "value": "string",
+        "lastUpdated": "timestamp"
+      }
+    },
+    "preferences": {
+      "theme": "string",
+      "notifications": {
+        "email": "boolean",
+        "push": "boolean"
+      },
+      "privacy": {
+        "profileVisibility": "string (public/private)",
+        "postVisibility": "string (public/private)"
+      }
+    }
   },
   "stats": {
-    "postsCount": "number",
-    "likesCount": "number"
+    "posts": {
+      "total": "number",
+      "public": "number",
+      "private": "number"
+    },
+    "likes": {
+      "given": "number",
+      "received": "number"
+    }
   },
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
+  "metadata": {
+    "createdAt": "timestamp",
+    "updatedAt": "timestamp",
+    "lastLogin": "timestamp",
+    "status": "string (active/inactive/suspended)"
+  }
 }
 ```
 
