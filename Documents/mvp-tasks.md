@@ -22,10 +22,10 @@
 
 ## 📦 Phase 2: Database Design & Implementation (DynamoDB)
 - [ ] **2.1 User Table Design**
-  - [ ] Define user attributes and schema
-  - [ ] Set up indexes for efficient queries
-  - [ ] Configure TTL for temporary data
-  - [ ] Implement user profile CRUD operations
+  - [ ] Define user attributes and schema with nested JSON for profile
+  - [ ] Plan for partial updates to the profile object
+  - [ ] Set up indexes for efficient queries (e.g., on username)
+  - [ ] Implement user profile CRUD operations (Create, Read, Update nested fields, Delete)
 
 - [ ] **2.2 Posts Table Design**
   - [ ] Define post attributes and schema
