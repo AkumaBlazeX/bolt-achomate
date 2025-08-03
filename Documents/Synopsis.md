@@ -72,15 +72,76 @@ The primary goal of this project is to successfully deploy EchoMateLite as a sec
 
 ```mermaid
 graph TD
-    User[👤 User] -- HTTPS --> Amplify[AWS Amplify Hosting <br> React/TS Frontend];
-
-    subgraph "AWS Serverless Backend"
-        Amplify -- API Calls --> APIGateway[API Gateway <br> REST Endpoints];
-        APIGateway -- Authorizes --> Cognito[AWS Cognito <br> User Authentication];
-        APIGateway -- Invokes --> Lambda[Monolithic Lambda Function <br> API Business Logic];
-        
-        Lambda -- Accesses --> DynamoDB[DynamoDB <br> Users, Posts, Likes Tables];
-        Lambda -- Accesses --> S3[S3 Bucket <br> Image Storage];
-        Lambda -- Logs to --> CloudWatch[CloudWatch <br> Logs & Metrics];
+    %% === User Layer ===
+    subgraph "User Layer"
+        User["👤 User"]
     end
+
+    %% === Frontend ===
+    subgraph "Frontend Layer"
+        Amplify["🚀 AWS Amplify<br/>React / TypeScript"]
+    end
+
+    %% === Auth Layer ===
+    subgraph "Authentication Layer"
+        Cognito["🔐 AWS Cognito<br/>User Pool"]
+        Trigger["⚙️ Post-Confirmation<br/>Lambda Trigger"]
+    end
+
+    %% === API Layer ===
+    subgraph "API Layer"
+        Gateway["🛠️ API Gateway<br/>REST Endpoints"]
+        Authorizer["✅ Cognito Authorizer"]
+        Lambda["🧠 Lambda Function<br/>Business Logic"]
+    end
+
+    %% === Storage Layer ===
+    subgraph "Storage Layer"
+        DynamoDB["🗂️ DynamoDB<br/>On-Demand Tables"]
+        S3["🖼️ S3 Bucket<br/>Image Storage"]
+    end
+
+    %% === Monitoring Layer ===
+    subgraph "Monitoring Layer"
+        CloudWatch["📊 CloudWatch<br/>Logs & Metrics"]
+    end
+
+    %% === Connections ===
+    User -->|🌐 HTTPS| Amplify
+    Amplify -->|🔐 Auth Requests| Cognito
+    Cognito -->|🆕 On New User| Trigger
+    Trigger -->|👤 Creates Profile| DynamoDB
+
+    Amplify -->|📡 API Calls| Gateway
+    Gateway -->|🔎 Validates Token| Authorizer
+    Authorizer -->|🧾 Checks With| Cognito
+    Gateway -->|⚙️ Invokes| Lambda
+
+    Lambda -->|📥📤 Reads/Writes| DynamoDB
+    Lambda -->|🔗 Generates URLs| S3
+
+    Lambda -->|📝 Sends Logs| CloudWatch
+    Gateway -->|📈 Metrics| CloudWatch
+    DynamoDB -->|📈 Metrics| CloudWatch
+    Cognito -->|📝 Logs| CloudWatch
+
+    %% === Styles ===
+    classDef userStyle fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,font-weight:bold
+    classDef frontendStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef authStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef triggerStyle fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
+    classDef apiStyle fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    classDef lambdaStyle fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    classDef storageStyle fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    classDef monitorStyle fill:#e8eaf6,stroke:#3949ab,stroke-width:2px
+
+    class User userStyle
+    class Amplify frontendStyle
+    class Cognito,Authorizer authStyle
+    class Trigger triggerStyle
+    class Gateway apiStyle
+    class Lambda lambdaStyle
+    class DynamoDB,S3 storageStyle
+    class CloudWatch monitorStyle
+
 ```
