@@ -25,7 +25,7 @@ The primary goal of this project is to successfully deploy EchoMateLite as a sec
 - **Implementation:** AWS Cognito manages user credentials, password hashing, and JWT token generation. API Gateway integrates with Cognito to protect all backend routes using authorizers.
 - **Expected Result:** A robust and secure user authentication system.
   
-![Login Page](pictures/Screenshot%20from%202025-08-03%2011-44-25.png)
+![Login Page](pictures/1.png)
 
 ---
 
@@ -34,7 +34,7 @@ The primary goal of this project is to successfully deploy EchoMateLite as a sec
 - **Implementation:** A modal form allows users to edit their data. The frontend uses file inputs and the FileReader API to preview images. Changes trigger authenticated API calls to Lambda functions, updating the `Users` table in DynamoDB and uploading images to S3.
 - **Expected Result:** A persistent and customizable user profile experience.
 
-![Profile Management](pictures/Screenshot%20from%202025-08-03%2011-46-47.png)
+![Profile Management](pictures/2.png)
 
 ---
 
@@ -43,7 +43,7 @@ The primary goal of this project is to successfully deploy EchoMateLite as a sec
 - **Implementation:** On form submission, the frontend sends post data and image via a secure API call. The Lambda function assigns a unique `postId`, uploads the image to S3, and inserts the post into the `Posts` table in DynamoDB.
 - **Expected Result:** A working social feed showing user-generated posts and images.
 
-![Post Creation and Viewing](pictures/Screenshot%20from%202025-08-03%2011-47-08.png)
+![Post Creation and Viewing](pictures/3.png)
 
 ---
 
