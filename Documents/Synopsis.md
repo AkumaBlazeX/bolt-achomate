@@ -20,6 +20,7 @@ The primary goal of this project is to successfully deploy the "EchoMateLite" so
 *   **Functionality:** Users can create an account, log in, and log out securely. The system protects user data and private routes.
 *   **Implementation:** The system uses AWS Cognito to manage the entire user lifecycle, including password hashing and JWT token generation. An API Gateway Cognito authorizer secures all protected backend endpoints.
 *   **Expected Result:** A reliable and secure authentication system that grants users access to the platform and forms the foundation for all personalized features.
+(pictures/Screenshot from 2025-08-03 11-44-25.png)[Login Page]
 
 #### 2. Dynamic Profile Management
 *   **Functionality:** Users can create and customize their personal profile with a name, bio, and custom profile and cover pictures.
