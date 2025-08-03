@@ -1,53 +1,74 @@
-# Synopsis: EchoMateLite - A Social Media Platform
+# Synopsis: EchoMateLite – A Serverless Social Platform on AWS
 
 ## ● Problem Statement
 
-"EchoMateLite" is a startup social media platform with a functional frontend but no backend infrastructure. The core challenge is to deploy this application on the cloud, transforming it from a local concept into a publicly accessible and scalable service. The project requires architecting and implementing a complete serverless backend on AWS to enable essential features like secure user authentication, dynamic profile management, and post creation. The solution must be cost-effective and scalable to support future growth.
+EchoMateLite is a startup social media platform with a functional frontend but no backend infrastructure. The core challenge is to deploy this application on the cloud, transforming it from a local prototype into a publicly accessible and scalable service. The project requires designing and implementing a complete serverless backend on AWS to enable essential features such as secure user authentication, dynamic profile management, and post creation. The solution must remain cost-effective while supporting future growth and increased user demand.
+
+---
 
 ## ● Goals and Objectives
 
-The primary goal of this project is to successfully deploy the "EchoMateLite" social media platform as a secure, scalable, and cost-efficient application on the AWS cloud.
+The primary goal of this project is to successfully deploy EchoMateLite as a secure, scalable, and cost-efficient application using serverless services on AWS.
 
 **Objectives:**
-1.  **Implement Secure User Management:** To build a complete authentication and authorization system using AWS Cognito, allowing users to sign up, log in, and manage their sessions securely.
-2.  **Establish a Serverless Backend:** To create a robust, event-driven backend using AWS Lambda and API Gateway, which will handle all business logic without the need to manage servers.
-3.  **Deploy a Scalable Database and Media Storage:** To design and implement a flexible NoSQL database with Amazon DynamoDB and a durable object storage solution with Amazon S3, ensuring data integrity and efficient media handling.
-4.  **Enable Continuous Deployment for the Frontend:** To configure a CI/CD pipeline using AWS Amplify Hosting, enabling automatic builds and deployments of the React frontend from a Git repository.
+1. **Implement Secure User Management:** Use AWS Cognito for full authentication and authorization, allowing users to sign up, log in, and manage sessions securely.
+2. **Establish a Serverless Backend:** Design a scalable, event-driven backend using AWS Lambda and API Gateway to handle business logic without managing servers.
+3. **Deploy a Flexible NoSQL Database and Media Storage:** Use Amazon DynamoDB and Amazon S3 to store user data and media efficiently and reliably.
+4. **Enable Continuous Deployment for the Frontend:** Set up a CI/CD pipeline using AWS Amplify Hosting to deploy the frontend automatically from a Git repository.
+
+---
 
 ## ● Key Features
 
-#### 1. Secure User Authentication
-*   **Functionality:** Users can create an account, log in, and log out securely. The system protects user data and private routes.
-*   **Implementation:** The system uses AWS Cognito to manage the entire user lifecycle, including password hashing and JWT token generation. An API Gateway Cognito authorizer secures all protected backend endpoints.
-*   **Expected Result:** A reliable and secure authentication system that grants users access to the platform and forms the foundation for all personalized features.
-(pictures/Screenshot from 2025-08-03 11-44-25.png)[Login Page]
+### 1. 🔐 Secure User Authentication
+- **Functionality:** Users can create accounts, sign in, and securely manage sessions. Private routes are protected.
+- **Implementation:** AWS Cognito manages user credentials, password hashing, and JWT token generation. API Gateway integrates with Cognito to protect all backend routes using authorizers.
+- **Expected Result:** A robust and secure user authentication system.
+  
+![Login Page](pictures/Screenshot%20from%202025-08-03%2011-44-25.png)
 
-#### 2. Dynamic Profile Management
-*   **Functionality:** Users can create and customize their personal profile with a name, bio, and custom profile and cover pictures.
-*   **Implementation:** After logging in, users can edit their profile information via a modal. The frontend uses standard file inputs and the FileReader API to handle image uploads. Authenticated API calls to Lambda update the user's record in the `Users` DynamoDB table and save the new images to the S3 bucket.
-*   **Expected Result:** An engaging user experience where profiles are persistent and customizable, with all data and media securely stored in the backend.
+---
 
-#### 3. Post Creation and Viewing
-*   **Functionality:** Users can create new posts containing text and an image, and view a feed of their posts on their profile.
-*   **Implementation:** The frontend sends the post content and image data to a secure API endpoint. The monolithic Lambda function generates a unique `postId`, uploads the image to S3, and creates a new record in the `Posts` DynamoDB table, linking it to the user's `userId`.
-*   **Expected Result:** A core social feed where content can be created and displayed, with a clear and scalable system for managing posts and their associated media.
+### 2. 👤 Dynamic Profile Management
+- **Functionality:** Users can update their profile information including name, bio, profile picture, and banner image.
+- **Implementation:** A modal form allows users to edit their data. The frontend uses file inputs and the FileReader API to preview images. Changes trigger authenticated API calls to Lambda functions, updating the `Users` table in DynamoDB and uploading images to S3.
+- **Expected Result:** A persistent and customizable user profile experience.
+
+![Profile Management](pictures/Screenshot%20from%202025-08-03%2011-46-47.png)
+
+---
+
+### 3. 📝 Post Creation and Viewing
+- **Functionality:** Users can create text/image posts and view them on their profile feed.
+- **Implementation:** On form submission, the frontend sends post data and image via a secure API call. The Lambda function assigns a unique `postId`, uploads the image to S3, and inserts the post into the `Posts` table in DynamoDB.
+- **Expected Result:** A working social feed showing user-generated posts and images.
+
+![Post Creation and Viewing](pictures/Screenshot%20from%202025-08-03%2011-47-08.png)
+
+---
 
 ## ● Technology Architecture
 
-#### Frontend
-*   **Framework:** React with TypeScript, built using Vite.
-*   **Styling:** Tailwind CSS for a utility-first styling workflow.
-*   **Routing:** React Router DOM for client-side navigation.
-*   **Media Handling:** Native browser File Inputs and the FileReader API for processing image uploads before sending to the backend.
-*   **Hosting:** AWS Amplify Hosting, providing a git-based CI/CD workflow, global CDN, and free SSL/TLS encryption.
+### 🧩 Frontend
+- **Framework:** React with TypeScript, built using Vite
+- **Styling:** Tailwind CSS (utility-first CSS framework)
+- **Routing:** React Router DOM for client-side navigation
+- **Media Handling:** Native `<input type="file">` elements and FileReader API
+- **Deployment:** AWS Amplify Hosting (CI/CD, CDN, SSL)
 
-#### Backend
-*   **Architecture:** A serverless, monolithic API approach was chosen for MVP simplicity and low cost. A single AWS Lambda function contains all the API business logic. This can be refactored into microservices as the application scales.
-*   **Authentication:** AWS Cognito handles user pools and identity management.
-*   **API Layer:** Amazon API Gateway exposes the RESTful endpoints and integrates with Cognito for request authorization.
-*   **Database:** Amazon DynamoDB (NoSQL) is used with on-demand capacity for the `Users`, `Posts`, and `Likes` tables.
-*   **Media Storage:** Amazon S3 stores all user-uploaded images (profile pictures, cover banners, and post images).
-*   **Monitoring:** AWS CloudWatch is used for default, automatic logging and monitoring of all API Gateway requests and Lambda function executions.
+---
+
+### 🛠️ Backend
+- **Architecture:** A serverless monolithic Lambda function handles all business logic. This design simplifies the MVP and can be modularized in the future.
+- **Authentication:** AWS Cognito handles user pools and token-based authentication.
+- **API Layer:** API Gateway exposes REST endpoints and integrates with Cognito authorizers.
+- **Database:** Amazon DynamoDB (on-demand) is used for `Users`, `Posts`, and `Likes` tables.
+- **Media Storage:** Amazon S3 securely stores all uploaded images.
+- **Monitoring:** AWS CloudWatch logs all API and Lambda activity.
+
+---
+
+## ● System Architecture Diagram
 
 ```mermaid
 graph TD
@@ -62,4 +83,3 @@ graph TD
         Lambda -- Accesses --> S3[S3 Bucket <br> Image Storage];
         Lambda -- Logs to --> CloudWatch[CloudWatch <br> Logs & Metrics];
     end
-```
